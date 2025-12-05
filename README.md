@@ -7,7 +7,7 @@ Shader Studio is a tool for animating MSL (Metal Shading Language) shaders. It p
 
 - MSL Animator requires Swift 5.7 or later.  
 - Google AI Studio API Key
-    - Sign up for a Google AI Studio account at https://ai.google/studio
+    - Sign up for a Google AI Studio account at https://aistudio.google.com
     - Get an API key from the API keys section
     - Set the API key in the shell environment (`~/.bashrc` or `~/.zshrc`):
 
