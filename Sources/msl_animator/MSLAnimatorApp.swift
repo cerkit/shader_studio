@@ -5,7 +5,7 @@ struct MSLAnimatorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("Shader Studio") {
             ContentView()
         }
     }
