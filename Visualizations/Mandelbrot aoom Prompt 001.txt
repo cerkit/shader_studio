@@ -1,0 +1,1 @@
+Please generate a shader that zooms into a Mandelbrot Fractal at the “tip” of the fractal.The fractal should be varying shades of purple and red. The shader should last 20 seconds and be a seamless looping video when rendered. Please recalculate the mandelbrot every 5 frames so that it retains its detail when zooming in.

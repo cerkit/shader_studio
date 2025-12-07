@@ -1,0 +1,1 @@
+Please generate a shader that moves the camera through a wireframe tunnel using 3D geometric shapes. The wires should be varying shades of purple. The shader should last 10 seconds and be a seamless looping video when rendered. Make the camera "wobble" so that it moves along the X and Y axis. The camera should start and end at the same location. 
