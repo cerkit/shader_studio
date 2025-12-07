@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:msl_animator}",
+            "name": "Debug msl_animator",
+            "program": "${workspaceFolder:msl_animator}/.build/debug/msl_animator",
+            "preLaunchTask": "swift: Build Debug msl_animator"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:msl_animator}",
+            "name": "Release msl_animator",
+            "program": "${workspaceFolder:msl_animator}/.build/release/msl_animator",
+            "preLaunchTask": "swift: Build Release msl_animator"
+        }
+    ]
+}
