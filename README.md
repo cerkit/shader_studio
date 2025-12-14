@@ -2,10 +2,12 @@
 
 Shader Studio is a tool for animating MSL (Metal Shading Language) shaders. It provides a built-in generative AI feature for creating shaders from a text prompt. It can then export a QuickTime movie of the animation. It can save .metal files and export .mov files. The .metal file contains the prompt used to generate the shader. 
 
+[Explainer Video](https://youtu.be/qJKb_FWHQ5w)
+[Blog Post about Shader Studio](https://cerkit.com/shader-studio-an-ai-powered-metal-shader-language-editor/)
 
 ### Prerequisites
 
-- MSL Animator requires Swift 5.7 or later.  
+- MSL Animator (Shader Studio) requires Swift 5.7 or later.  
 - Google AI Studio API Key
     - Sign up for a Google AI Studio account at https://aistudio.google.com
     - Get an API key from the API keys section
