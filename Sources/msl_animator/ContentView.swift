@@ -43,9 +43,10 @@ struct ContentView: View {
     }
 
     var body: some View {
-        HSplitView {
-            VSplitView {
-                // Gemini Section
+        VSplitView {
+            // Top Section
+            HSplitView {
+                // Left Column: Gemini Section
                 GroupBox(label: Label("Generative AI Shader", systemImage: "sparkles")) {
                     DisclosureGroup("Settings", isExpanded: $showGeminiSettings) {
                         VStack(alignment: .leading, spacing: 10) {
@@ -96,78 +97,96 @@ struct ContentView: View {
                         .padding(10)
                     }
                 }
-                .padding([.horizontal, .top])
-                .frame(minHeight: 200)  // Ensure it has a reasonable default height
+                .padding()
+                .frame(minWidth: 300, maxWidth: .infinity)
 
-                VStack(alignment: .leading) {
-                    Text("Fragment Shader (MSL)")
-                        .font(.headline)
-                        .padding(.leading)
-                    MonacoEditor(text: $shaderCode)
-                        .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
-                        .onChange(of: shaderCode) {
-                            renderer.compile(source: shaderCode)
+                // Right Column: Preview
+                VStack {
+                    ZStack {
+                        Color.black
+                        MetalView(renderer: renderer)
+                            .aspectRatio(16 / 9, contentMode: .fit)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+
+                    // Controls
+                    HStack {
+                        Text("Duration:")
+                        TextField("Seconds", text: $durationString)
+                            .frame(width: 60)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: durationString) {
+                                if let val = Double(durationString) {
+                                    duration = val
+                                }
+                            }
+                        Text("sec")
+
+                        Spacer()
+
+                        Button("Save .metal") {
+                            saveShader()
                         }
+                        .disabled(shaderCode.isEmpty)
 
-                    if let error = renderer.compilationError {
-                        Text(error)
-                            .foregroundColor(.red)
+                        Button("Save PNG") {
+                            saveImage()
+                        }
+                        .disabled(shaderCode.isEmpty)
+
+                        Button("Export Movie") {
+                            exportMovie()
+                        }
+                        .disabled(isExporting)
+                    }
+                    .padding([.horizontal, .bottom])
+
+                    if isExporting {
+                        ProgressView(value: exportProgress)
                             .padding()
                     }
                 }
+                .frame(minWidth: 400, maxWidth: .infinity)
             }
+            .frame(minHeight: 300)  // Minimum height for top section
 
-            VStack {
-                // Preview
-                ZStack {
-                    Color.black
-                    MetalView(renderer: renderer)
-                        .aspectRatio(16 / 9, contentMode: .fit)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)  // Allow it to fill available space
-                .padding()
-
+            // Bottom Section: Editor
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Duration:")
-                    TextField("Seconds", text: $durationString)
-                        .frame(width: 60)
-                        .textFieldStyle(.roundedBorder)
-                        .onChange(of: durationString) {
-                            if let val = Double(durationString) {
-                                duration = val
-                            }
-                        }
-                    Text("sec")
+                    Text("Fragment Shader (MSL)")
+                        .font(.headline)
+                        .padding([.leading, .top], 10)
 
-                    Spacer()
-
-                    Button("Save .metal") {
-                        saveShader()
+                    if let error = renderer.compilationError {
+                        Spacer()
+                        Text("Compilation Error")
+                            .foregroundColor(.red)
+                            .padding([.trailing, .top], 10)
+                            .help(error)
                     }
-                    .disabled(shaderCode.isEmpty)
-
-                    Button("Save PNG") {
-                        saveImage()
-                    }
-                    .disabled(shaderCode.isEmpty)
-
-                    Button("Export Movie") {
-                        exportMovie()
-                    }
-                    .disabled(isExporting)
                 }
-                .padding()
-                .layoutPriority(1)  // Ensure controls are always visible
 
-                if isExporting {
-                    ProgressView(value: exportProgress)
-                        .padding()
-                        .layoutPriority(1)
+                MonacoEditor(text: $shaderCode)
+                    .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
+                    .onChange(of: shaderCode) {
+                        renderer.compile(source: shaderCode)
+                    }
+
+                if let error = renderer.compilationError {
+                    ScrollView {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.caption.monospaced())
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 100)
+                    .background(Color.black.opacity(0.05))
                 }
             }
-            .frame(minWidth: 400)
         }
-        .padding()
+        .padding(0)
         .onAppear {
             renderer.compile(source: shaderCode)
         }
