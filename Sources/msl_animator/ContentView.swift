@@ -103,8 +103,7 @@ struct ContentView: View {
                     Text("Fragment Shader (MSL)")
                         .font(.headline)
                         .padding(.leading)
-                    TextEditor(text: $shaderCode)
-                        .font(.monospaced(.body)())
+                    MonacoEditor(text: $shaderCode)
                         .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
                         .onChange(of: shaderCode) {
                             renderer.compile(source: shaderCode)
