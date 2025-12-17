@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monaco Editor</title>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1e1e1e; /* Match VS Code Dark */
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <!-- Load Monaco Editor from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+
+        let editor;
+
+        require(['vs/editor/editor.main'], function() {
+            // MSL Keywords to enhance C++ highlighting
+            const mslKeywords = [
+                'metal_stdlib', 'using', 'namespace', 'metal',
+                'kernel', 'vertex', 'fragment', 'compute',
+                'device', 'constant', 'thread', 'threadgroup', 'threadgroup_imageblock',
+                'float2', 'float3', 'float4', 'float4x4', 'half', 'half2', 'half3', 'half4',
+                'int2', 'int3', 'int4', 'uint', 'uint2', 'uint3', 'uint4',
+                'texture2d', 'sampler', 'buffer', 'stage_in', 'position', 'color'
+            ];
+
+            // Define a custom theme or language if needed, effectively extending C++
+            monaco.languages.registerCompletionItemProvider('cpp', {
+                provideCompletionItems: (model, position) => {
+                    const suggestions = mslKeywords.map(k => ({
+                        label: k,
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        insertText: k
+                    }));
+                    return { suggestions: suggestions };
+                }
+            });
+
+            editor = monaco.editor.create(document.getElementById('container'), {
+                value: '',
+                language: 'cpp', // C++ is the closest to MSL
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                fontSize: 14,
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                padding: { top: 10, bottom: 10 }
+            });
+
+            // Handle content changes
+            editor.onDidChangeModelContent(() => {
+                const value = editor.getValue();
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.shaderUpdate) {
+                    window.webkit.messageHandlers.shaderUpdate.postMessage(value);
+                }
+            });
+
+            // Signal that editor is ready
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.editorLoaded) {
+                window.webkit.messageHandlers.editorLoaded.postMessage("ready");
+            }
+        });
+
+        // Function called from Swift to update code
+        function updateCode(newCode) {
+            if (editor && editor.getValue() !== newCode) {
+                const position = editor.getPosition();
+                editor.setValue(newCode);
+                editor.setPosition(position);
+            }
+        }
+    </script>
+</body>
+</html>
