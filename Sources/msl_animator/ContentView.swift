@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) var openWindow
 
     // Gemini Integration (Keeping UI specific state here for now or could move to AppState)
     @AppStorage("geminiApiKey") private var apiKey: String = ""
@@ -84,10 +85,23 @@ struct ContentView: View {
 
                 // Right Column: Preview
                 VStack {
-                    ZStack {
+                    ZStack(alignment: .topTrailing) {
                         Color.black
                         MetalView(renderer: appState.renderer)
                             .aspectRatio(16 / 9, contentMode: .fit)
+
+                        Button(action: {
+                            openWindow(id: "presentation")
+                        }) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .padding(8)
+                                .background(Color.black.opacity(0.5))
+                                .foregroundColor(.white)
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(8)
+                        .help("Open Presentation Window")
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
