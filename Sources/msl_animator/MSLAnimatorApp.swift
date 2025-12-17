@@ -10,6 +10,10 @@ struct MSLAnimatorApp: App {
             ContentView()
                 .environmentObject(appState)
         }
+        WindowGroup("Presentation", id: "presentation") {
+            PresentationView()
+                .environmentObject(appState)
+        }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open...") {
