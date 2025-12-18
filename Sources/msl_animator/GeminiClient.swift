@@ -47,10 +47,11 @@ struct GeminiClient {
 
             fragment float4 fragment_main(VertexOut in [[stage_in]],
                                           constant float2& u_resolution [[buffer(0)]],
-                                          constant float& u_time [[buffer(1)]]) {
+                                          constant float& u_time [[buffer(1)]],
+                                          constant float& u_audio [[buffer(2)]]) {
                 float2 uv = in.uv; // uv is already normalized 0..1 from vertex shader
                 // Your code here
-                // You can use u_resolution (screen size in pixels) and u_time (seconds)
+                // You can use u_resolution (screen size in pixels), u_time (seconds), and u_audio (normalized volume 0.0 to 1.0)
                 
                 return float4(color, 1.0);
             }

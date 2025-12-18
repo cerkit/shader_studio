@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MetalView: NSViewRepresentable {
     @ObservedObject var renderer: ShaderRenderer
+    @ObservedObject var audioController: AudioController  // Add AudioController
 
     func makeNSView(context: Context) -> MTKView {
         let mtkView = MTKView()
@@ -41,9 +42,11 @@ struct MetalView: NSViewRepresentable {
 
             let time = Float(Date().timeIntervalSince(parent.renderer.startTime))
             let resolution = view.drawableSize
+            let audioLevel = parent.audioController.currentLevel
 
             parent.renderer.encode(
                 commandBuffer: commandBuffer, texture: drawable.texture, time: time,
+                audioLevel: audioLevel,
                 resolution: resolution)
 
             commandBuffer.present(drawable)
