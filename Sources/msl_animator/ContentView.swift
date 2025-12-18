@@ -87,8 +87,10 @@ struct ContentView: View {
                 VStack {
                     ZStack(alignment: .topTrailing) {
                         Color.black
-                        MetalView(renderer: appState.renderer)
-                            .aspectRatio(16 / 9, contentMode: .fit)
+                        MetalView(
+                            renderer: appState.renderer, audioController: appState.audioController
+                        )
+                        .aspectRatio(16 / 9, contentMode: .fit)
 
                         Button(action: {
                             openWindow(id: "presentation")
@@ -107,16 +109,51 @@ struct ContentView: View {
                     .padding()
 
                     // Controls
-                    HStack {
-                        Text("Duration:")
-                        TextField(
-                            "Seconds", value: $appState.duration, formatter: NumberFormatter()
-                        )
-                        .frame(width: 60)
-                        .textFieldStyle(.roundedBorder)
-                        Text("sec")
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("Duration:")
+                            TextField(
+                                "Seconds", value: $appState.duration, formatter: NumberFormatter()
+                            )
+                            .frame(width: 60)
+                            .textFieldStyle(.roundedBorder)
+                            Text("sec")
 
-                        Spacer()
+                            Spacer()
+
+                            // Audio Controls
+                            if let name = appState.audioController.currentURL?.lastPathComponent {
+                                Text("🎵 \(name)")
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+
+                            Button("Load Audio") {
+                                appState.loadAudio { promptAddon in
+                                    // Append prompt addon and notify user?
+                                    // For now, just append it to the prompt field if possible, OR
+                                    // since prompt is in ContentView, we need to handle it.
+                                    // Let's modify loadAudio to return the suggestion or set it in AppState.
+                                    // But loadAudio completion is good using completion handler here.
+                                    self.prompt += "\n" + promptAddon
+                                }
+                            }
+
+                            Button(action: {
+                                if appState.audioController.isPlaying {
+                                    appState.audioController.pause()
+                                } else {
+                                    appState.audioController.play()
+                                }
+                            }) {
+                                Image(
+                                    systemName: appState.audioController.isPlaying
+                                        ? "pause.fill" : "play.fill")
+                            }
+                            .disabled(appState.audioController.currentURL == nil)
+                            .keyboardShortcut(.space, modifiers: [])  // Space to play/pause
+                        }
                     }
                     .padding([.horizontal, .bottom])
 

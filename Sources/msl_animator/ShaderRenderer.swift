@@ -56,6 +56,11 @@ class ShaderRenderer: NSObject, ObservableObject {
             }
 
             // User code starts here
+            // The user is expected to provide a fragment_main function with the following signature:
+            // fragment float4 fragment_main(VertexOut in [[stage_in]],
+            //                              constant float2& u_resolution [[buffer(0)]],
+            //                              constant float& u_time [[buffer(1)]],
+            //                              constant float& u_audio [[buffer(2)]]) { ... }
             \(source)
             """
 
@@ -84,7 +89,8 @@ class ShaderRenderer: NSObject, ObservableObject {
     }
 
     func encode(
-        commandBuffer: MTLCommandBuffer, texture: MTLTexture, time: Float, resolution: CGSize
+        commandBuffer: MTLCommandBuffer, texture: MTLTexture, time: Float, audioLevel: Float,
+        resolution: CGSize
     ) {
         guard let pipelineState = pipelineState else { return }
 
@@ -107,6 +113,9 @@ class ShaderRenderer: NSObject, ObservableObject {
 
         var t = time
         renderEncoder.setFragmentBytes(&t, length: MemoryLayout<Float>.size, index: 1)
+
+        var audio = audioLevel
+        renderEncoder.setFragmentBytes(&audio, length: MemoryLayout<Float>.size, index: 2)
 
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         renderEncoder.endEncoding()

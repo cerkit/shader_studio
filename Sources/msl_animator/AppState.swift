@@ -25,7 +25,37 @@ class AppState: ObservableObject {
 
     // Dependencies
     let renderer = ShaderRenderer()
+    let audioController = AudioController()
     private var currentExporter: VideoExporter?
+
+    func loadAudio(completion: @escaping (String) -> Void) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.wav]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.message = "Select a WAV audio file"
+
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                self.audioController.load(url: url)
+
+                // Construct prompt based on analysis
+                var promptAddon = ""
+                if self.audioController.isEnergetic {
+                    promptAddon =
+                        "The music is energetic. Use vibrant colors like orange, red, and yellow. Make it react strongly to u_audio."
+                } else {
+                    promptAddon =
+                        "The music is ambient and slow. Use gradient shades of blue and purple. Make it react gently to u_audio."
+                }
+
+                promptAddon += " Mirror the resulting image on the horizontal and vertical axis."
+
+                completion(promptAddon)
+            }
+        }
+    }
 
     func compileShader() {
         renderer.compile(source: shaderCode)
@@ -44,7 +74,7 @@ class AppState: ObservableObject {
         panel.begin { response in
             if response == .OK, let url = panel.url {
                 do {
-                    let content = try String(contentsOf: url)
+                    let content = try String(contentsOf: url, encoding: .utf8)
                     DispatchQueue.main.async {
                         self.shaderCode = content
                         self.compileShader()
@@ -106,7 +136,7 @@ class AppState: ObservableObject {
                 if let commandBuffer = self.renderer.commandQueue.makeCommandBuffer() {
                     let time = Float(Date().timeIntervalSince(self.renderer.startTime))
                     self.renderer.encode(
-                        commandBuffer: commandBuffer, texture: texture, time: time,
+                        commandBuffer: commandBuffer, texture: texture, time: time, audioLevel: 0.0,
                         resolution: CGSize(width: width, height: height))
                     commandBuffer.commit()
                     commandBuffer.waitUntilCompleted()
@@ -150,8 +180,59 @@ class AppState: ObservableObject {
                 let exporter = VideoExporter(renderer: self.renderer)
                 self.currentExporter = exporter
 
+                let width = 1920
+                let height = 1080
+
+                // Capture audio controller to safe processing
+                // Assuming audioController is MainActor, we need to be careful.
+                // But export happens on background?
+                // AudioController.level(at:) only reads existing immutable array (mostly).
+                // However AudioController is MainActor.
+                // We should grab the data or make level(at:) nonisolated if possible and safe.
+                // `audioSamples` is private var.
+                // Better: Capture the closure if it can run safely?
+                // Actually, AudioController is @MainActor. Calling level(at:) from background thread will require excessive awaiting.
+                // Let's make `level(at:)` nonisolated? Accessing `audioSamples` (Array) from multiple threads is unsafe if it is verified being mutated.
+                // Mutations happen only on `analyze` (MainActor). Reads happen here.
+                // If we ensure no mutation during export (reasonable), we can maybe make a copy for export, or just access it.
+                // Safest: Copy the samples out to a helper struct/class for the exporter?
+                // Or just `await` inside the provider? The provider expects (TimeInterval) -> Float immediately (synchronous).
+                // So we can't await.
+
+                // Solution: Extract the provider logic into a standalone safe struct or closure that captures the necessary data (samples, sampleRate) *before* export starts.
+
+                let samples = self.audioController.getSamples()  // We need to expose this
+                let sampleRate = self.audioController.getSampleRate()
+
+                let audioProvider: (TimeInterval) -> Float = { time in
+                    guard !samples.isEmpty else { return 0.0 }
+                    let index = Int(time * sampleRate)
+                    guard index >= 0 && index < samples.count else { return 0.0 }
+                    let windowSize = Int(0.05 * sampleRate)
+                    let start = max(0, index - windowSize / 2)
+                    let end = min(samples.count, index + windowSize / 2)
+
+                    var sumSquares: Float = 0
+                    var count = 0
+
+                    // Unsafe calculation optimization? or simple loop
+                    for i in start..<end {
+                        let s = samples[i]
+                        sumSquares += s * s
+                        count += 1
+                    }
+
+                    if count == 0 { return 0.0 }
+                    let rms = sqrt(sumSquares / Float(count))
+                    let minDb: Float = -60.0
+                    let db = rms > 0 ? 20 * log10(rms) : -160.0
+                    let clampedDb = max(minDb, db)
+                    return (clampedDb - minDb) / abs(minDb)
+                }
+
                 exporter.export(
-                    outputURL: outputURL, duration: self.duration, width: width, height: height
+                    outputURL: outputURL, duration: self.duration, width: width, height: height,
+                    audioProvider: audioProvider
                 ) { progress in
                     Task { @MainActor in
                         self.exportProgress = progress
