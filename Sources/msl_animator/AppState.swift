@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 class AppState: ObservableObject {
@@ -20,6 +21,10 @@ class AppState: ObservableObject {
     @Published var isExporting = false
     @Published var exportProgress: Double = 0.0
 
+    // Image to Shader Logic
+    @Published var selectedImageData: Data?
+    @Published var selectedImageName: String?
+
     // UI Logic for Dialogs
     @Published var showExportDialog = false
 
@@ -27,6 +32,37 @@ class AppState: ObservableObject {
     let renderer = ShaderRenderer()
     let audioController = AudioController()
     private var currentExporter: VideoExporter?
+
+    func loadImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.message = "Select an image to use as reference"
+
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                if let image = NSImage(contentsOf: url) {
+                    // Convert to JPEG for consistent format and reasonable size
+                    if let tiffData = image.tiffRepresentation,
+                        let bitmap = NSBitmapImageRep(data: tiffData),
+                        let jpegData = bitmap.representation(
+                            using: .jpeg, properties: [.compressionFactor: 0.8])
+                    {
+                        self.selectedImageData = jpegData
+                        self.selectedImageName = url.lastPathComponent
+                        print("Image loaded: \(self.selectedImageName ?? "unknown")")
+                    }
+                }
+            }
+        }
+    }
+
+    func clearImage() {
+        self.selectedImageData = nil
+        self.selectedImageName = nil
+    }
 
     func loadAudio(completion: @escaping (String) -> Void) {
         let panel = NSOpenPanel()
