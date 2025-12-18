@@ -15,7 +15,13 @@ struct GeminiClient {
     }
 
     struct Part: Codable {
-        let text: String
+        var text: String?
+        var inlineData: InlineData?
+    }
+
+    struct InlineData: Codable {
+        let mimeType: String
+        let data: String
     }
 
     struct GenerateContentResponse: Codable {
@@ -31,7 +37,9 @@ struct GeminiClient {
         var errorDescription: String? { message }
     }
 
-    func generateShader(prompt: String, apiKey: String) async throws -> String {
+    func generateShader(prompt: String, imageData: Data? = nil, apiKey: String) async throws
+        -> String
+    {
         guard let url = URL(string: "\(baseURL)?key=\(apiKey)") else {
             throw URLError(.badURL)
         }
@@ -77,9 +85,25 @@ struct GeminiClient {
                - USE the `*` operator for matrix multiplication (e.g., `matrix * vector` or `vector * matrix`).
             """
 
+        var parts: [Part] = []
+        if let imageData = imageData {
+            parts.append(
+                Part(
+                    inlineData: InlineData(
+                        mimeType: "image/jpeg", data: imageData.base64EncodedString())))
+            // Prepend a descriptive instruction for image interpretation
+            parts.append(
+                Part(
+                    text:
+                        "Generate a Metal Shading Language (MSL) shader that interprets the shapes and colors of this image. "
+                        + prompt))
+        } else {
+            parts.append(Part(text: prompt))
+        }
+
         let requestBody = GenerateContentRequest(
             contents: [
-                Content(parts: [Part(text: prompt)], role: "user")
+                Content(parts: parts, role: "user")
             ],
             systemInstruction: Content(parts: [Part(text: systemPrompt)], role: nil)
         )

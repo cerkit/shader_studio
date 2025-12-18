@@ -131,12 +131,25 @@ struct ContentView: View {
 
                             Button("Load Audio") {
                                 appState.loadAudio { promptAddon in
-                                    // Append prompt addon and notify user?
-                                    // For now, just append it to the prompt field if possible, OR
-                                    // since prompt is in ContentView, we need to handle it.
-                                    // Let's modify loadAudio to return the suggestion or set it in AppState.
-                                    // But loadAudio completion is good using completion handler here.
                                     self.prompt += "\n" + promptAddon
+                                }
+                            }
+
+                            Button("Load Image") {
+                                appState.loadImage()
+                            }
+
+                            if let imageName = appState.selectedImageName {
+                                HStack(spacing: 4) {
+                                    Text("🖼️ \(imageName)")
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                    Button(action: { appState.clearImage() }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
 
@@ -219,7 +232,9 @@ struct ContentView: View {
         Task {
             do {
                 let generatedCode = try await geminiClient.generateShader(
-                    prompt: prompt, apiKey: effectiveApiKey)
+                    prompt: prompt,
+                    imageData: appState.selectedImageData,
+                    apiKey: effectiveApiKey)
                 await MainActor.run {
                     appState.shaderCode = generatedCode
                     isGenerating = false
