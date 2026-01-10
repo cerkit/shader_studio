@@ -18,6 +18,10 @@ struct MSLAnimatorApp: App {
             CleanOutputView()
                 .environmentObject(appState)
         }
+        WindowGroup("Scenes Configuration", id: "scenes-config") {
+            ScenesConfigView()
+                .environmentObject(appState)
+        }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open...") {
@@ -39,6 +43,12 @@ struct MSLAnimatorApp: App {
                 }
             }
 
+            CommandMenu("Scenes") {
+                Button("Configure Scenes...") {
+                    NotificationCenter.default.post(name: .openScenesConfig, object: nil)
+                }
+            }
+
             // Export Menu
             CommandMenu("Export") {
                 Button("Save Image...") {
@@ -57,6 +67,7 @@ struct MSLAnimatorApp: App {
 
 extension Notification.Name {
     static let openVideoSource = Notification.Name("OpenVideoSource")
+    static let openScenesConfig = Notification.Name("OpenScenesConfig")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {

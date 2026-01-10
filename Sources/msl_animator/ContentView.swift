@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var isGenerating: Bool = false
     @State private var generationError: String?
     @State private var showGeminiSettings: Bool = true
+    @State private var selectedPresetIndex: Int = -1
 
     private let geminiClient = GeminiClient()
 
@@ -129,6 +130,20 @@ struct ContentView: View {
                                     .truncationMode(.middle)
                             }
 
+                            Picker("Load Scene", selection: $selectedPresetIndex) {
+                                Text("Select").tag(-1)
+                                ForEach(0..<4) { index in
+                                    Text("Scene \(index + 1)").tag(index)
+                                }
+                            }
+                            .frame(width: 100)
+                            .onChange(of: selectedPresetIndex) { _, newValue in
+                                if newValue >= 0 && newValue < appState.presets.count {
+                                    appState.shaderCode = appState.presets[newValue]
+                                    appState.compileShader()
+                                }
+                            }
+
                             Button("Load Audio") {
                                 appState.loadAudio { promptAddon in
                                     self.prompt += "\n" + promptAddon
@@ -220,6 +235,9 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .openVideoSource)) { _ in
             openWindow(id: "video-source")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openScenesConfig)) { _ in
+            openWindow(id: "scenes-config")
         }
         .sheet(isPresented: $appState.showExportDialog) {
             ExportDialog()
