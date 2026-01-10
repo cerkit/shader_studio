@@ -218,6 +218,9 @@ struct ContentView: View {
         .onAppear {
             appState.compileShader()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openVideoSource)) { _ in
+            openWindow(id: "video-source")
+        }
         .sheet(isPresented: $appState.showExportDialog) {
             ExportDialog()
         }
