@@ -28,10 +28,17 @@ class AppState: ObservableObject {
     // UI Logic for Dialogs
     @Published var showExportDialog = false
 
+    // Scene Presets
+    @Published var presets: [String] = []
+
     // Dependencies
     let renderer = ShaderRenderer()
     let audioController = AudioController()
     private var currentExporter: VideoExporter?
+
+    init() {
+        loadPresets()
+    }
 
     func loadImage() {
         let panel = NSOpenPanel()
@@ -288,4 +295,40 @@ class AppState: ObservableObject {
             }
         }
     }
+
+    // MARK: - Scene Presets Logic
+
+    func loadPresets() {
+        var loadedPresets: [String] = []
+        for i in 0..<4 {
+            if let saved = UserDefaults.standard.string(forKey: "Preset_\(i)") {
+                loadedPresets.append(saved)
+            } else {
+                // Default empty or basic shader for new slots
+                loadedPresets.append(ShaderDefaults.defaultShader)
+            }
+        }
+        self.presets = loadedPresets
+    }
+
+    func savePresets() {
+        for (i, code) in presets.enumerated() {
+            if i < 4 {
+                UserDefaults.standard.set(code, forKey: "Preset_\(i)")
+            }
+        }
+    }
+}
+
+struct ShaderDefaults {
+    static let defaultShader = """
+        #include <metal_stdlib>
+        using namespace metal;
+
+        fragment float4 fragment_main(VertexOut in [[stage_in]],
+                                      constant float2& u_resolution [[buffer(0)]],
+                                      constant float& u_time [[buffer(1)]]) {
+            return float4(0.0, 0.0, 0.0, 1.0);
+        }
+        """
 }

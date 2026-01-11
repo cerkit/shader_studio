@@ -14,6 +14,14 @@ struct MSLAnimatorApp: App {
             PresentationView()
                 .environmentObject(appState)
         }
+        WindowGroup("Video Source", id: "video-source") {
+            CleanOutputView()
+                .environmentObject(appState)
+        }
+        WindowGroup("Scenes Configuration", id: "scenes-config") {
+            ScenesConfigView()
+                .environmentObject(appState)
+        }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open...") {
@@ -27,6 +35,18 @@ struct MSLAnimatorApp: App {
                     appState.saveShader()
                 }
                 .keyboardShortcut("s", modifiers: .command)
+            }
+
+            CommandMenu("Video Source") {
+                Button("Open Output Window") {
+                    NotificationCenter.default.post(name: .openVideoSource, object: nil)
+                }
+            }
+
+            CommandMenu("Scenes") {
+                Button("Configure Scenes...") {
+                    NotificationCenter.default.post(name: .openScenesConfig, object: nil)
+                }
             }
 
             // Export Menu
@@ -43,6 +63,11 @@ struct MSLAnimatorApp: App {
             }
         }
     }
+}
+
+extension Notification.Name {
+    static let openVideoSource = Notification.Name("OpenVideoSource")
+    static let openScenesConfig = Notification.Name("OpenScenesConfig")
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
